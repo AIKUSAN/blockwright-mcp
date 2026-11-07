@@ -5,6 +5,7 @@
  * and fake Blockbench globals, so it runs under Bun without Blockbench.
  *
  *   bun run tests/repro/session-buildup.ts [sessions...]       (default 1 5 20 32 40)
+ *   bun run tests/repro/session-buildup.ts --streams [toggles] [streams...]  (unread GET streams)
  *   bun run tests/repro/session-buildup.ts --live <url> <n> [project]  (a running Blockbench)
  *
  * Copyright (c) 2026 AIKUSAN. Part of Blockwright MCP, distributed under GPL-3.0-only.
@@ -50,7 +51,8 @@ async function remove(url: string, sessionId: string): Promise<number> {
 
 const mb = (bytes: number) => Math.round(bytes / 1024 / 1024);
 
-async function harness(counts: number[]): Promise<void> {
+/** Starts the real HTTP server with 204 synthetic tools; `project` flips the 135 project-only ones. */
+async function startHarness() {
   let hasProject = false;
   Object.assign(globalThis, {
     Blockbench: { showQuickMessage: () => {} },
@@ -81,14 +83,19 @@ async function harness(counts: number[]): Promise<void> {
   await new Promise<void>((resolve) => servers[0].listening ? resolve() : servers[0].once("listening", () => resolve()));
   const url = `http://127.0.0.1:${(servers[0].address() as AddressInfo).port}/blockwright`;
 
+  return { url, servers, sessionManager, setProject: (on: boolean) => { hasProject = on; } };
+}
+
+async function harness(counts: number[]): Promise<void> {
+  const { url, servers, sessionManager, setProject } = await startHarness();
   console.log("sessions | rss MB | heap MB | init ms (last) | tools before/after project | get_status ms | open after");
   for (const count of counts) {
-    hasProject = false;
+    setProject(false);
     Bun.gc(true);
     const heap0 = process.memoryUsage().heapUsed;
     const opened = [];
     for (let n = 0; n < count; n++) opened.push(await openSession(url, n));
-    hasProject = true; // create_project
+    setProject(true); // create_project
     const after = await post(url, { jsonrpc: "2.0", id: 9, method: "tools/list" }, opened.at(-1)!.id);
     const fresh = await openSession(url, count); // the run that hung: a new session, then get_status
     const status = await call(url, fresh.id, "get_status");
@@ -96,6 +103,65 @@ async function harness(counts: number[]): Promise<void> {
     const mem = process.memoryUsage();
     console.log(`${String(count).padStart(8)} | ${String(mb(mem.rss)).padStart(6)} | ${String(mb(mem.heapUsed - heap0)).padStart(7)} | ${opened.at(-1)!.ms.toFixed(1).padStart(14)} | ${opened[0].tools}/${JSON.parse(after.body).result?.tools?.length ?? "?"} | ${status.status} ${status.ms.toFixed(1)} | ${sessionManager.getCount()}`);
     for (const id of [...opened.map((s) => s.id), fresh.id]) if (sessionManager.has(id)) await remove(url, id);
+  }
+  for (const server of servers) server.close();
+  sessionManager.clear();
+}
+
+/**
+ * Clients that open the GET notification stream and never read it (or read it late),
+ * and never DELETE. Flips the project-only tools `toggles` times, each flip followed by
+ * a probe request (every request re-checks tool availability), then measures.
+ */
+async function streams(counts: number[], toggles: number): Promise<void> {
+  const { url, servers, sessionManager, setProject } = await startHarness();
+  const { port, pathname } = new URL(url);
+  console.log(`toggles per run: ${toggles}`);
+  console.log("streams | opened/refused | rss MB | heap MB | get_status ms (before/after) | list_changed per stream (min-max) | bytes per stream | open after");
+  for (const count of counts) {
+    setProject(false);
+    Bun.gc(true);
+    const heap0 = process.memoryUsage().heapUsed;
+    const clients: { id: string; socket: net.Socket; received: () => string }[] = [];
+    let refused = 0;
+    for (let n = 0; n < count; n++) {
+      let id: string;
+      try {
+        id = (await openSession(url, n)).id;
+      } catch {
+        refused++;
+        continue;
+      }
+      let data = "";
+      const socket = net.connect({ host: "127.0.0.1", port: Number(port) });
+      await new Promise<void>((resolve) => socket.once("connect", () => resolve()));
+      socket.write(`GET ${pathname} HTTP/1.1\r\nHost: 127.0.0.1:${port}\r\nAccept: text/event-stream\r\nMcp-Session-Id: ${id}\r\n\r\n`);
+      await new Promise<void>((resolve) => socket.once("data", (chunk) => { data += chunk.toString(); resolve(); }));
+      socket.pause(); // never read from here on, until the measurement
+      socket.on("data", (chunk) => { data += chunk.toString(); });
+      clients.push({ id, socket, received: () => data });
+    }
+    const fresh = await openSession(url, count + 1).catch(() => null);
+    // At the session limit no new client gets in; an open stream session then sends the requests.
+    const probe = fresh ?? (clients[0] ? { id: clients[0].id } : null);
+    const before = probe ? await call(url, probe.id, "get_status") : null;
+    for (let t = 0; t < toggles; t++) {
+      setProject(t % 2 === 0);
+      if (probe) await post(url, { jsonrpc: "2.0", id: 10 + t, method: "tools/list" }, probe.id);
+      await Bun.sleep(0); // let the SDK's debounced notification go out
+    }
+    const after = probe ? await call(url, probe.id, "get_status") : null;
+    Bun.gc(true);
+    const mem = process.memoryUsage();
+    for (const client of clients) client.socket.resume();
+    await Bun.sleep(300);
+    const counts = clients.map((c) => (c.received().match(/notifications\/tools\/list_changed/g) ?? []).length);
+    const bytes = clients.map((c) => c.received().length);
+    const range = (v: number[]) => v.length ? `${Math.min(...v)}-${Math.max(...v)}` : "-";
+    console.log(`${String(count).padStart(7)} | ${clients.length}/${refused} | ${String(mb(mem.rss)).padStart(6)} | ${String(mb(mem.heapUsed - heap0)).padStart(7)} | ${fresh ? "" : "(in a stream session) "}${before ? `${before.status} ${before.ms.toFixed(1)}` : "no probe"} / ${after ? `${after.status} ${after.ms.toFixed(1)}` : "-"} | ${range(counts)} | ${range(bytes)} | ${sessionManager.getCount()}`);
+    for (const client of clients) client.socket.destroy();
+    for (const id of [...clients.map((c) => c.id), ...(fresh ? [fresh.id] : [])]) if (sessionManager.has(id)) await remove(url, id);
+    await Bun.sleep(50);
   }
   for (const server of servers) server.close();
   sessionManager.clear();
@@ -139,6 +205,7 @@ async function live(url: string, count: number, projectName: string): Promise<vo
 if (import.meta.main) {
   const args = process.argv.slice(2);
   if (args[0] === "--live") await live(args[1], Number(args[2] ?? 5), args[3] ?? "bw_repro_scratch");
+  else if (args[0] === "--streams") await streams(args.slice(2).length ? args.slice(2).map(Number) : [1, 5, 40], Number(args[1] ?? 6));
   else await harness(args.length ? args.map(Number) : [1, 5, 20, 32, 40]);
   process.exit(0);
 }

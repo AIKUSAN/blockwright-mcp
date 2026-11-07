@@ -520,6 +520,43 @@ describe("createNetServer sessions without DELETE", () => {
     }
   });
 
+  test("answered POSTs do not stay in the session's transport (each one kept its whole response)", async () => {
+    const [server] = await start("127.0.0.1");
+    const port = portOf(server);
+    const sessionId = await initialize(port);
+    const pending = (): number => (Reflect.get(sessions.get(sessionId)!.transport, "_streamMapping") as Map<unknown, unknown>).size;
+    expect(pending()).toBe(0);
+    for (let n = 0; n < 25; n++) {
+      expect((await request(port, mcpPost(port, sessionId), toolCall(10 + n, "net_test_present"))).status).toBe(200);
+    }
+    const batch = JSON.stringify([JSON.parse(toolCall(50, "net_test_present")), JSON.parse(toolCall(51, "net_test_present"))]);
+    const batchReply = await request(port, mcpPost(port, sessionId), batch);
+    expect(batchReply.status).toBe(200);
+    expect(JSON.parse(batchReply.body)).toHaveLength(2);
+    expect(pending()).toBe(0);
+  });
+
+  test("a call still running keeps its entry until it is answered", async () => {
+    const tool = registerWaitingTool("net_test_slow");
+    try {
+      const [server] = await start("127.0.0.1");
+      const port = portOf(server);
+      const sessionId = await initialize(port);
+      const pending = (): number => (Reflect.get(sessions.get(sessionId)!.transport, "_streamMapping") as Map<unknown, unknown>).size;
+      const slow = request(port, mcpPost(port, sessionId), toolCall(60, "net_test_slow"));
+      await tool.started;
+      expect((await request(port, mcpPost(port, sessionId), toolCall(61, "net_test_present"))).status).toBe(200);
+      expect(pending()).toBe(1);
+      tool.release();
+      const reply = await slow;
+      expect(reply.status).toBe(200);
+      expect(reply.body).toContain("released");
+      expect(pending()).toBe(0);
+    } finally {
+      removeTool("net_test_slow");
+    }
+  });
+
   test("past the limit the oldest idle session is closed, so the open count never exceeds it", async () => {
     try {
       const [server] = await start("127.0.0.1", { sessionConfig: { maxSessions: 3 } });

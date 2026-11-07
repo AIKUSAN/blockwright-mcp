@@ -1,4 +1,5 @@
 // Modified by AIKUSAN, 2026-11-06: Blockbench registry ids prefixed with blockwright_ so the fork can run beside the original plugin.
+// Modified by AIKUSAN, 2026-11-07: answered JSON responses are released from the transport (releaseAnsweredResponses).
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js'
 import { EmptyResultSchema, type RequestId } from '@modelcontextprotocol/sdk/types.js'
 import type { Server as NetServer, Socket } from 'node:net'
@@ -150,6 +151,33 @@ function answerCancelled (server: McpServer, requestId: RequestId): void {
       error: { code: REQUEST_CANCELLED, message: 'Request cancelled by the client' }
     })
     .catch(() => undefined)
+}
+
+/**
+ * In JSON response mode the SDK (1.25.3, still so in 1.32.2) registers one entry per
+ * POST in the transport's private `_streamMapping` and never removes it once the
+ * response is resolved, so a session kept every response it ever sent (screenshots
+ * included) until it closed. Removes the entry when its response is resolved.
+ * Entries without `resolveJson` (SSE streams) keep the SDK's own cleanup.
+ */
+function releaseAnsweredResponses (transport: WebStandardStreamableHTTPServerTransport): void {
+  const mapping: unknown = Reflect.get(transport, '_streamMapping')
+  if (!(mapping instanceof Map)) {
+    console.warn('[MCP] Transport internals changed: answered responses may stay in memory until the session closes')
+    return
+  }
+  const set = mapping.set.bind(mapping)
+  mapping.set = (key: unknown, value: unknown) => {
+    const entry = value as { resolveJson?: (response: Response) => void } | undefined
+    const resolveJson = entry?.resolveJson
+    if (typeof resolveJson === 'function') {
+      entry!.resolveJson = (response: Response) => {
+        if (mapping.get(key) === entry) mapping.delete(key)
+        resolveJson(response)
+      }
+    }
+    return set(key, value)
+  }
 }
 
 /** Marks `session` closed and releases its waiting requests when the transport closes. */
@@ -679,6 +707,7 @@ export default function createNetServer (
               }
             })
 
+            releaseAnsweredResponses(transport)
             const newSession: ISessionEntry = { transport, server: sessionServer, closed: false, waiting: new Set(), streams: 0 }
             // Counted toward the limit from now on, so concurrent initialize requests cannot overshoot it.
             opening.add(newSession)

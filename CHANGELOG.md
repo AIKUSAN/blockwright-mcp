@@ -1,15 +1,16 @@
 # Changelog
 
-## Unreleased
+## 1.0.2 (2026-11-07)
 
-No change to the plugin itself; the built file is the same as 1.0.1.
+### Fixed
+- Every MCP session kept each response it had sent, screenshots included, until the session closed. The MCP SDK's transport (1.25.3, and still in 1.32.2) never removes an answered request from its stream map when it replies with JSON. The plugin now removes each entry once its response is sent. Measured with `tests/repro/session-buildup.ts --streams 2000`: memory grew by 205 MB before the fix and by 2 MB after.
 
 ### Investigated
-- A Blockbench freeze reported with 1.0.1 (2026-11-07) was not reproduced. After it, the Blockbench window was blank and its editor process had died, so the plugin's server inside that process stopped answering. Five MCP sessions left open without DELETE, then `create_project`, did not freeze Blockbench again: a new session still answered in 2 ms, and again 35 s later. The cause is not known.
+- A Blockbench freeze reported with 1.0.1 (2026-11-07) was not reproduced. After it, the Blockbench window was blank and its editor process had died, so the plugin's server inside that process stopped answering. Five MCP sessions left open without DELETE, then `create_project`, did not freeze Blockbench again: a new session still answered in 2 ms, and again 35 s later. Notification streams that clients never read did not block or slow the server either. The retained responses above could have filled the editor's memory over a long session, but that is not proven.
 
 ### Added
-- Tests for sessions that clients never close: the inactivity timeout releases them, DELETE releases a session's server and tool registrations, 40 open-and-close rounds leave nothing behind, 20 open sessions do not slow a new client, and the session limit closes the oldest idle session.
-- `tests/repro/session-buildup.ts` (sessions without DELETE, with or without a running Blockbench) and `tests/repro/count-tools.ts` (the tool catalogue grouped by availability).
+- Tests for sessions that clients never close: the inactivity timeout releases them, DELETE releases a session's server and tool registrations, 40 open-and-close rounds leave nothing behind, 20 open sessions do not slow a new client, the session limit closes the oldest idle session, and answered requests no longer stay in the transport.
+- `tests/repro/session-buildup.ts` (sessions without DELETE, unread notification streams, or a running Blockbench) and `tests/repro/count-tools.ts` (the tool catalogue grouped by availability).
 
 ### Docs
 - `docs/tools.md` says that 204 is the whole catalogue and that a client sees only the tools available at the moment (69 with no project open in the desktop app).
