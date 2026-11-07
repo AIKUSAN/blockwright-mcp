@@ -1,6 +1,6 @@
 <!-- Modified by AIKUSAN, 2026-11-06: rewritten for Blockwright MCP; the upstream README is kept in docs/upstream-README.md. -->
 <!-- Modified by AIKUSAN, 2026-11-07: sections reordered; the full tool list moved to docs/tools.md. -->
-<!-- Modified by AIKUSAN, 2026-11-07: "See it work" filled with images from the launch session; the tool count is left out until it is re-checked. -->
+<!-- Modified by AIKUSAN, 2026-11-07: "See it work" filled with images from the launch session; the tool count is left out until it is re-checked; the launch demo is shown as a GIF. -->
 # Blockwright MCP for Blockbench
 
 An unofficial MCP server that runs inside Blockbench, so AI assistants such as Claude Code and Claude Desktop can work on your models with you.
@@ -28,7 +28,7 @@ It combines [blockbench-mcp-plugin](https://github.com/jasonjgardner/blockbench-
 
 ## See it work
 
-[Watch the launch video (44 s)](https://github.com/AIKUSAN/blockwright-mcp/releases/download/v1.0.1/blockwright_launch_landscape.mp4)
+![Blockwright MCP demo](docs/images/blockwright-demo.gif)
 
 All images below are real tool output from Blockbench 5.2.2 on a scratch test model.
 
