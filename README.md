@@ -1,13 +1,117 @@
 <!-- Modified by AIKUSAN, 2026-11-06: rewritten for Blockwright MCP; the upstream README is kept in docs/upstream-README.md. -->
+<!-- Modified by AIKUSAN, 2026-11-07: sections reordered; the full tool list moved to docs/tools.md. -->
 # Blockwright MCP for Blockbench
 
-**Blockwright MCP for Blockbench** is an unofficial MCP server. It runs inside Blockbench and lets AI assistants such as Claude Desktop and Claude Code work on your models.
+An unofficial MCP server that runs inside Blockbench, so AI assistants such as Claude Code and Claude Desktop can work on your models with you.
+
+[![Licence: GPL-3.0-only](https://img.shields.io/badge/licence-GPL--3.0--only-blue)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/AIKUSAN/blockwright-mcp)](https://github.com/AIKUSAN/blockwright-mcp/releases)
+[![Blockbench 5.0+](https://img.shields.io/badge/Blockbench-5.0%2B%20(tested%205.2.2)-1e93d9)](https://www.blockbench.net/)
 
 > Blockwright MCP is not an official Blockbench product and is not endorsed by the Blockbench project, by Jason J. Gardner, or by sosadly.
 
+## What it does
+
+Blockwright MCP is a Blockbench plugin. Once it is loaded, Blockbench serves the Model Context Protocol at `http://localhost:3001/blockwright`, and an MCP client can use 204 tools on the open project, from placing the first cube to exporting the finished model. Screenshots render offscreen, so your camera stays where you left it.
+
 It combines [blockbench-mcp-plugin](https://github.com/jasonjgardner/blockbench-mcp-plugin) by Jason J. Gardner (the base) with the tools of [blockbench-mcp](https://github.com/sosadly/blockbench-mcp) by sosadly, plus additions for day-to-day modelling work.
 
-## What is different from the upstream projects
+## Features
+
+- **Review sheets:** front, back, sides, top and a three-quarter view in one PNG, each cell marking where the model's own right and left are.
+- **Side guard:** `place_cube` and `add_group` warn, or refuse, when a part named left sits on the model's right.
+- **Overlap and z-fighting finder:** `find_overlaps` lists flickering coplanar faces and intersecting cubes, rotated ones included, with a suggested fix.
+- **Silhouette compare:** `compare_silhouette` scores the model's outline against a reference image.
+- **WebGL safety:** lost views are rebuilt automatically, blank frames are refused, and new views stop before Chromium's context limit.
+- **Offscreen rendering:** review and screenshot tools never move your camera.
+
+## See it work
+
+<!-- Images from the launch session go here: review sheet, find_overlaps, compare_silhouette. -->
+Screenshots and a short video are on their way.
+
+## Requirements
+
+- Blockbench desktop 5.0 or newer (tested on 5.2.2). The web version cannot run the server.
+- An MCP client: Claude Code, Claude Desktop, or any client that speaks MCP over HTTP.
+- Node.js, for Claude Desktop only (it connects through `npx mcp-remote`).
+- Bun, only to build from source.
+
+## Install
+
+### 1. Blockbench
+
+1. Download `blockwright_mcp.js` from the [latest release](https://github.com/AIKUSAN/blockwright-mcp/releases/latest), or `plugin/blockwright_mcp.js` from this repository.
+2. In Blockbench: **File > Plugins > Load Plugin from File**, then choose the file.
+3. Blockbench asks for permission to use network and system modules; the MCP server needs them. Allow them. File access is asked for the first time a tool reads a file (for example a reference image for `compare_silhouette`).
+4. The server listens on `http://localhost:3001/blockwright`. Port and path can be changed under **Settings > General**.
+
+The text of the MCP prompts is built into the plugin. Only a build without it fetches the text from this repository through the jsDelivr CDN (`cdn.jsdelivr.net/gh/AIKUSAN/blockwright-mcp`); **Settings > General** can turn that off. Nothing about your models is sent.
+
+### 2. Claude Code
+
+```
+claude mcp add --transport http blockwright http://localhost:3001/blockwright
+```
+
+### 3. Claude Desktop and other MCP clients
+
+Claude Desktop: add this to `claude_desktop_config.json` and restart the app:
+
+```json
+{
+  "mcpServers": {
+    "blockwright": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "http://localhost:3001/blockwright"]
+    }
+  }
+}
+```
+
+Other clients: point them at `http://localhost:3001/blockwright` (streamable HTTP). If a client only starts local commands, use the same `npx -y mcp-remote http://localhost:3001/blockwright` bridge.
+
+## Quick start
+
+1. Open or create a project in Blockbench. Most tools appear only while a project is open.
+2. Ask your assistant, for example:
+   - "Add a body and two arms, then render a review sheet."
+   - "Find z-fighting in this model and fix it."
+   - "Compare the front view with `~/Downloads/reference.png`."
+3. Check the result in Blockbench. Most changes go into its undo history, so Ctrl+Z (Cmd+Z on macOS) takes them back.
+
+## Tool reference
+
+| Category | Tools | Examples |
+|---|---:|---|
+| Cubes | 5 | `place_cube`, `modify_cube`, `knife_cut_cube` |
+| Camera & Screenshots | 7 | `capture_screenshot`, `capture_app_screenshot`, `set_camera_angle` |
+| Review & Renderer Health | 3 | `render_review_sheet`, `render_health`, `recover_renderer` |
+| Ported from sosadly/blockbench-mcp (MIT) | 52 | `get_status`, `get_guide`, `get_orientation` |
+| Quality checks | 2 | `find_overlaps`, `compare_silhouette` |
+| Capabilities | 1 | `get_capabilities` |
+| Animation | 9 | `create_animation`, `manage_keyframes`, `animation_graph_editor` |
+| Armature | 17 | `list_armatures`, `get_armature`, `add_armature` |
+| Display Settings | 3 | `get_display_transform`, `set_display_transform`, `enter_display_mode` |
+| Elements | 9 | `remove_element`, `add_group`, `list_outline` |
+| Export | 2 | `list_export_formats`, `export_model` |
+| History | 4 | `undo`, `redo`, `get_undo_stack` |
+| Import/Export | 1 | `from_geo_json` |
+| Material Instances | 5 | `get_face_material_instances`, `set_face_material_instance`, `list_material_instances` |
+| Mesh Editing | 15 | `place_mesh`, `extrude_mesh`, `subdivide_mesh` |
+| Paint Tools | 12 | `paint_fill_tool`, `draw_shape_tool`, `gradient_tool` |
+| Particles | 7 | `list_particle_presets`, `create_particle_effect`, `update_particle_effect` |
+| Performance | 1 | `get_average_fps` |
+| Project | 2 | `create_project`, `get_project_info` |
+| Textures | 14 | `create_texture`, `apply_texture`, `add_texture_group` |
+| UI Interaction | 6 | `trigger_action`, `risky_eval`, `emulate_clicks` |
+| UV Mapping | 5 | `set_mesh_uv`, `auto_uv_mesh`, `rotate_mesh_uv` |
+| GeckoLib Integration | 10 | `geckolib_get_format_info`, `geckolib_set_project_settings`, `geckolib_list_easings` |
+| Hytale Integration | 12 | `hytale_get_format_info`, `hytale_validate_model`, `hytale_set_cube_properties` |
+
+The full list of all 204 tools is in [docs/tools.md](docs/tools.md).
+
+## What's different from upstream
 
 - **One plugin, 204 tools.** The base plugin's tools plus 52 tools ported from sosadly/blockbench-mcp, with no separate bridge process.
 - **Review sheets.** `render_review_sheet` renders front, back, sides, top and a three-quarter view into one PNG. Each cell marks where the model's own right and left are, because a front view is mirrored.
@@ -22,70 +126,18 @@ It combines [blockbench-mcp-plugin](https://github.com/jasonjgardner/blockbench-
 
 The full list is in [CHANGELOG.md](CHANGELOG.md).
 
-## Install in Blockbench (desktop)
+## Troubleshooting
 
-1. Download `plugin/blockwright_mcp.js` from this repository (or from a release).
-2. In Blockbench: **File > Plugins > Load Plugin from File**, then choose the file.
-3. Blockbench asks for permission to use network and system modules; the MCP server needs them. Allow them. File access is asked for the first time a tool reads a file (for example a reference image for `compare_silhouette`).
-4. The server listens on `http://localhost:3001/blockwright`. Port and path can be changed under **Settings > General**.
+- **Screenshots are black or blank, or a "WebGL was lost" notice appears.** Run `render_health`, then `recover_renderer`. Lost offscreen views are rebuilt on their next render. If the notice names the main viewport, save your project and restart Blockbench. `create_offscreen_view` refuses new views at 12 live WebGL contexts; delete views you no longer need with `delete_offscreen_view`.
+- **A file cannot be read.** On macOS, Blockbench may only be able to read files in `~/Downloads`. Put reference images and models there, or give Blockbench access to the folder in **System Settings > Privacy & Security**.
+- **The client cannot connect.** Check that Blockbench is open and the plugin is loaded. If port 3001 is taken, change the port under **Settings > General** and update the URL in your client. Blockwright MCP uses its own port and path, so it can run beside the original plugin on port 3000.
+- **The plugin does not start after a permission prompt.** Blockbench asks once for each kind of access. Choose **Always allow for this plugin**; if you denied it, reload the plugin from **File > Plugins**.
 
-Blockwright MCP needs Blockbench 5.0 or newer (tested on 5.2.2).
+## Contributing and issues
 
-The text of the MCP prompts is built into the plugin. Only a build without it fetches the text from this repository through the jsDelivr CDN (`cdn.jsdelivr.net/gh/AIKUSAN/blockwright-mcp`); **Settings > General** can turn that off. Nothing about your models is sent.
+Please report problems with Blockwright MCP in this repository's [issue tracker](https://github.com/AIKUSAN/blockwright-mcp/issues), not to the upstream projects. Pull requests are welcome.
 
-## Connect an MCP client
-
-### Claude Desktop
-
-Add this to `claude_desktop_config.json` and restart the app:
-
-```json
-{
-  "mcpServers": {
-    "blockwright": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "http://localhost:3001/blockwright"]
-    }
-  }
-}
-```
-
-### Claude Code
-
-```
-claude mcp add --transport http blockwright http://localhost:3001/blockwright
-```
-
-## Tools
-
-Tools that need an open project only appear while one is open. `install_plugin` and `uninstall_plugin` stay off until **Settings > General > Blockwright MCP: allow install_plugin / uninstall_plugin** is turned on. `risky_eval` runs JavaScript inside Blockbench and can be turned off in settings.
-
-- **Cubes** (5): `place_cube`, `modify_cube`, `knife_cut_cube`, `slice_cubes_to_block_grid`, `inspect_block_bounds`
-- **Camera & Screenshots** (7): `capture_screenshot`, `capture_app_screenshot`, `set_camera_angle`, `create_offscreen_view`, `list_views`, `resize_offscreen_view`, `delete_offscreen_view`
-- **Review & Renderer Health** (3): `render_review_sheet`, `render_health`, `recover_renderer`
-- **Ported from sosadly/blockbench-mcp (MIT)** (52): `get_status`, `get_guide`, `get_orientation`, `which_side`, `check_sides`, `request_review`, `wait_review`, `ask_user`, `list_formats`, `get_reference`, `load_reference`, `list_references`, `clear_references`, `compare_reference`, `measure_model`, `set_project_meta`, `close_project`, `save_project`, `export_project`, `load_project`, `add_groups`, `voxelize_matrix`, `add_hollow_volume`, `generate_array`, `extrude_chain`, `add_wing`, `check_model`, `audit_complexity`, `pack_uv`, `add_plane`, `mirror_element`, `edit_element`, `get_element`, `create_vfx_texture`, `set_texture_render_mode`, `import_texture`, `paint_texture`, `detail_cubes`, `paint_faces`, `resize_texture`, `list_animations`, `remove_animation`, `create_rig`, `check_rig`, `get_rig`, `generate_animation`, `analyze_animation`, `preview_animation`, `screenshot_views`, `list_plugins`, `install_plugin`, `uninstall_plugin`
-- **Quality checks** (2): `find_overlaps`, `compare_silhouette`
-- **Capabilities** (1): `get_capabilities`
-- **Animation** (9): `create_animation`, `manage_keyframes`, `animation_graph_editor`, `bone_rigging`, `animation_timeline`, `batch_keyframe_operations`, `animation_copy_paste`, `variable_placeholders`, `list_molang_variables`
-- **Armature** (17): `list_armatures`, `get_armature`, `add_armature`, `remove_armature`, `update_armature`, `list_armature_bones`, `get_armature_bone`, `add_armature_bone`, `remove_armature_bone`, `update_armature_bone`, `update_armature_bones_batch`, `select_armature_bones`, `get_vertex_weights`, `set_vertex_weight`, `set_vertex_weights_batch`, `clear_vertex_weights`, `set_ik_controller`
-- **Display Settings** (3): `get_display_transform`, `set_display_transform`, `enter_display_mode`
-- **Elements** (9): `remove_element`, `add_group`, `list_outline`, `duplicate_element`, `rename_element`, `find_elements_by_criteria`, `select_all_of_type`, `filter_by_material`, `get_selection`
-- **Export** (2): `list_export_formats`, `export_model`
-- **History** (4): `undo`, `redo`, `get_undo_stack`, `save_checkpoint`
-- **Import/Export** (1): `from_geo_json`
-- **Material Instances** (5): `get_face_material_instances`, `set_face_material_instance`, `list_material_instances`, `bulk_set_material_instances`, `clear_material_instances`
-- **Mesh Editing** (15): `place_mesh`, `extrude_mesh`, `subdivide_mesh`, `create_sphere`, `select_mesh_elements`, `move_mesh_vertices`, `delete_mesh_elements`, `merge_mesh_vertices`, `create_mesh_face`, `create_cylinder`, `knife_tool`, `create_polyhedron`, `loop_cut_mesh`, `flip_in_place`, `get_mesh_info`
-- **Paint Tools** (12): `paint_fill_tool`, `draw_shape_tool`, `gradient_tool`, `color_picker_tool`, `copy_brush_tool`, `eraser_tool`, `paint_settings`, `paint_with_brush`, `create_brush_preset`, `load_brush_preset`, `texture_selection`, `texture_layer_management`
-- **Particles** (7): `list_particle_presets`, `create_particle_effect`, `update_particle_effect`, `list_particle_effects`, `manage_particle_keyframes`, `add_locator`, `export_particle_pack`
-- **Performance** (1): `get_average_fps`
-- **Project** (2): `create_project`, `get_project_info`
-- **Textures** (14): `create_texture`, `apply_texture`, `add_texture_group`, `list_textures`, `get_texture`, `create_pbr_material`, `configure_material`, `list_materials`, `get_material_info`, `import_texture_set`, `assign_texture_channel`, `save_material_config`, `activate_texture`, `delete_texture`
-- **UI Interaction** (6): `trigger_action`, `risky_eval`, `emulate_clicks`, `fill_dialog`, `list_modes`, `set_mode`
-- **UV Mapping** (5): `set_mesh_uv`, `auto_uv_mesh`, `rotate_mesh_uv`, `get_cube_uv`, `set_cube_uv`
-- **GeckoLib Integration** (10): `geckolib_get_format_info`, `geckolib_set_project_settings`, `geckolib_list_easings`, `geckolib_get_keyframe_easing`, `geckolib_set_keyframe_easing`, `geckolib_reverse_keyframe_easing`, `geckolib_validate_model`, `geckolib_export_model`, `geckolib_export_animations`, `geckolib_export_display`
-- **Hytale Integration** (12): `hytale_get_format_info`, `hytale_validate_model`, `hytale_set_cube_properties`, `hytale_get_cube_properties`, `hytale_create_quad`, `hytale_list_attachments`, `hytale_set_attachment_piece`, `hytale_list_attachment_pieces`, `hytale_create_visibility_keyframe`, `hytale_set_animation_loop`, `hytale_set_cube_stretch`, `hytale_get_cube_stretch`
-
-## Build from source
+Build from source:
 
 ```
 bun install
@@ -96,16 +148,14 @@ node --test tests-node/
 
 `build/port-sosadly.py <checkout of sosadly/blockbench-mcp>` regenerates the ported sosadly files.
 
-## Report a problem
-
-Please report problems with Blockwright MCP in this repository's issue tracker, not to the upstream projects.
-
-## Credits and licence
+## Credits
 
 - Base: [blockbench-mcp-plugin](https://github.com/jasonjgardner/blockbench-mcp-plugin) by Jason J. Gardner and contributors, GPL-3.0-only.
 - Ported tools and the Copilot panel: [blockbench-mcp](https://github.com/sosadly/blockbench-mcp) by sosadly, MIT. The MIT notice is kept in the ported files and in `LICENSES/`.
 - Changes and additions: Copyright (c) 2026 AIKUSAN (Minecraft IGN: AIKUSAN).
 
-Blockwright MCP as a whole is licensed under the GNU General Public License v3.0 only. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
-
 The upstream README is kept in [docs/upstream-README.md](docs/upstream-README.md).
+
+## License
+
+Blockwright MCP as a whole is licensed under the GNU General Public License v3.0 only. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
