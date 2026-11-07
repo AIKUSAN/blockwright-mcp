@@ -1,0 +1,45 @@
+Blockwright MCP (unofficial MCP for Blockbench)
+==============================================
+
+Blockwright MCP is NOT an official Blockbench product. It is not made,
+approved, endorsed or supported by the Blockbench project, by Jason J.
+Gardner and the blockbench-mcp-plugin contributors, or by sosadly.
+
+Source code: https://github.com/AIKUSAN/blockwright-mcp
+
+Licence of the whole work: GNU General Public License v3.0 only
+(GPL-3.0-only), see LICENSE.
+
+Copyright (c) 2026 AIKUSAN (Minecraft IGN: AIKUSAN), for the changes and
+additions in this project, released under GPL-3.0-only.
+
+Upstream works
+--------------
+1. blockbench-mcp-plugin by Jason J. Gardner and contributors
+   (jasonjgardner, brokestar233, nhjydywd, djayfresh, heide-oficial)
+   https://github.com/jasonjgardner/blockbench-mcp-plugin
+   Licence: GPL-3.0-only. Base of this project, from commit 97a8a80 (v1.10.1).
+
+2. blockbench-mcp by sosadly
+   https://github.com/sosadly/blockbench-mcp
+   Copyright (c) 2026 sosadly. Licence: MIT, full text in
+   LICENSES/MIT-sosadly-blockbench-mcp.txt. Portions adapted from commit
+   028cdd7 are in lib/sosadly/core.js, lib/sosadly/catalogue.ts and
+   lib/orientation.ts; each of those files carries the MIT notice in its
+   header. build/port-sosadly.py regenerates the first two from a checkout of
+   that commit.
+
+3. Already in the base: portions of lib/geckolib-validate.ts are adapted from
+   adhi-jp/minecraft-blockbench-mcp, Copyright (c) 2026 adhi-jp, MIT; the
+   notice is kept in that file's header.
+
+Changes
+-------
+Every upstream file this project changes carries a "Modified by AIKUSAN,
+<date>" line describing the change (GPL-3.0 section 5a), except JSON files,
+which cannot hold comments: package.json and prompts/manifest.json were
+changed on 2026-11-06 (name, version, repository links, prompt text), as
+listed in CHANGELOG.md. New files carry their own copyright header.
+CHANGELOG.md lists the changes per release. The built plugin carries the
+GPL and MIT notices in its header; THIRD_PARTY_NOTICES.md lists the
+licences of the bundled third-party packages.
