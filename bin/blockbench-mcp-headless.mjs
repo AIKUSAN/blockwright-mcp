@@ -6,7 +6,9 @@
  * npm dependency first, then PATH) and runs headless/index.ts with it, forwarding
  * argv and stdio untouched so the MCP stdio transport works.
  *
- * npx -y github:jasonjgardner/blockbench-mcp-plugin --root "<folder>"
+ * npx -y github:AIKUSAN/blockwright-mcp --root "<folder>"
+ *
+ * Modified by AIKUSAN, 2026-11-07: the usage line names the Blockwright MCP repository.
  */
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";

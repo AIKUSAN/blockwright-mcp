@@ -1,6 +1,13 @@
 # Changelog
 
-## 1.0.0 (prepared 2026-11-06, not yet published)
+## 1.0.1 (2026-11-07)
+
+### Fixed
+- The headless launcher's usage comment and `.vscode/mcp.json` named the upstream package; they now use `github:AIKUSAN/blockwright-mcp`, and the VS Code entry points at `http://localhost:3001/blockwright`.
+- `render_review_sheet`: when a lost view was rebuilt during a sheet, that cell's left/right caption came from the old view's camera and could be reversed.
+- The server named itself "Blockbench MCP" to MCP clients and in its panel; it now reports "Blockwright MCP".
+
+## 1.0.0 (2026-11-07)
 
 First release of Blockwright MCP, based on blockbench-mcp-plugin 1.10.1 (commit 97a8a80) by Jason J. Gardner and contributors, with tools from blockbench-mcp 0.3.1 (commit 028cdd7) by sosadly.
 

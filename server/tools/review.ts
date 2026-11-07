@@ -145,7 +145,9 @@ async function renderReviewSheet(args: ReviewSheetArgs, owner?: string): Promise
           fov: cell.camera.fov,
         });
         renders.set(cell.view, renderViewToDataUrl(preview));
-        return relabelCell(cell, cameraScreenRight(preview), facing);
+        // The render may have rebuilt the view; label from the live preview,
+        // whose camera matrix matches this cell (the old one's is stale).
+        return relabelCell(cell, cameraScreenRight(resolveView(viewId)), facing);
       }),
     };
   } finally {

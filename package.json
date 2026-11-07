@@ -1,6 +1,6 @@
 {
   "name": "blockwright-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Blockwright MCP for Blockbench: an unofficial MCP server inside Blockbench (fork of jasonjgardner/blockbench-mcp-plugin with tools from sosadly/blockbench-mcp).",
   "keywords": [
     "Blockbench",

@@ -1,7 +1,7 @@
-// Modified by AIKUSAN, 2026-11-06: Blockbench registry ids prefixed with blockwright_ so the fork can run beside the original plugin.
+// Modified by AIKUSAN, 2026-11-06: Blockbench registry ids prefixed with blockwright_ so the fork can run beside the original plugin; 2026-11-07: reports itself as Blockwright MCP.
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { IMCPTool, IMCPPrompt, IMCPResource } from "@/types";
-import { VERSION } from "@/lib/constants";
+import { VERSION, PRODUCT_NAME } from "@/lib/constants";
 import { AI_USAGE_CHANGED } from "@/lib/ai-disclosure";
 import { TOOL_REGISTRY_CHANGED } from "@/lib/factories";
 import { statusBarSetup, statusBarTeardown } from "@/ui/statusBar";
@@ -141,7 +141,7 @@ export function uiSetup({
         sessions: [] as Array<{ id: string; connectedAt: Date; lastActivity: Date; clientName?: string; clientVersion?: string }>,
         server: {
           connected: false,
-          name: "Blockbench MCP",
+          name: PRODUCT_NAME,
           version: VERSION,
         },
         // Observe shared metadata so native condition changes refresh the panel.

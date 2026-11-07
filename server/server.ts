@@ -1,7 +1,7 @@
-// Modified by AIKUSAN, 2026-11-06: Blockbench registry ids prefixed with blockwright_ so the fork can run beside the original plugin.
+// Modified by AIKUSAN, 2026-11-06: Blockbench registry ids prefixed with blockwright_ so the fork can run beside the original plugin; 2026-11-07: reports itself as Blockwright MCP.
 /// <reference types="three" />
 /// <reference types="blockbench-types" />
-import { VERSION } from "@/lib/constants";
+import { VERSION, PRODUCT_NAME } from "@/lib/constants";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ErrorCode, McpError, type RequestId } from "@modelcontextprotocol/sdk/types.js";
 import { withResourceErrors } from "@/lib/resourceErrors";
@@ -26,7 +26,7 @@ export interface ICreateServerOptions {
 export function createServer(options: ICreateServerOptions = {}): McpServer {
   const instructions = options.instructions?.trim();
   const server = new McpServer({
-    name: "Blockbench MCP",
+    name: PRODUCT_NAME,
     version: VERSION,
   }, {
     ...(instructions ? { instructions } : {}),
