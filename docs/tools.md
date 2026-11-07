@@ -1,7 +1,9 @@
-<!-- Copyright (c) 2026 AIKUSAN. Part of Blockwright MCP, distributed under GPL-3.0-only. Moved from README.md, 2026-11-07. -->
+<!-- Copyright (c) 2026 AIKUSAN. Part of Blockwright MCP, distributed under GPL-3.0-only. Moved from README.md, 2026-11-07; catalogue count explained 2026-11-07. -->
 # Blockwright MCP tools
 
-All 204 tools, by category. Back to the [README](../README.md).
+The full catalogue of 204 tools, by category. Back to the [README](../README.md).
+
+A client never sees all 204 at once. `tools/list` shows only the tools that work in the current editor state. In the desktop app with default settings, no project and no dialog open, that is 69. With a project open it depends on the format, the mode, the textures, the selection and the undo history. `knife_tool` is never listed, and the Hytale (12), GeckoLib (9) and Bedrock block (5) tools each need their own format, so they never appear together.
 
 Tools that need an open project only appear while one is open. `install_plugin` and `uninstall_plugin` stay off until **Settings > General > Blockwright MCP: allow install_plugin / uninstall_plugin** is turned on. `risky_eval` runs JavaScript inside Blockbench and can be turned off in settings.
 

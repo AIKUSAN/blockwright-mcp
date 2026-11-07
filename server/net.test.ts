@@ -1,9 +1,10 @@
-import { afterEach, describe, expect, spyOn, test } from "bun:test";
+// Modified by AIKUSAN, 2026-11-07: tests for sessions left open without DELETE.
+import { afterAll, afterEach, beforeAll, describe, expect, spyOn, test } from "bun:test";
 import net, { type AddressInfo } from "node:net";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { z } from "zod";
-import { createTool, removeTool } from "@/lib/factories";
-import { DEFAULT_MAX_SESSIONS, sessionManager, type ISessionConfig } from "@/lib/sessions";
+import { createTool, removeTool, sessionServerCount } from "@/lib/factories";
+import { DEFAULT_INACTIVITY_TIMEOUT_MS, DEFAULT_MAX_SESSIONS, sessionManager, type ISessionConfig } from "@/lib/sessions";
 import createNetServer, { type NetServer, type SessionTransports } from "@/server/net";
 import { useGlobals } from "@/tests/helpers/globals";
 
@@ -435,6 +436,101 @@ describe("createNetServer session lifecycle", () => {
       expect((await call).status).toBe(200);
     } finally {
       removeTool("net_test_busy");
+      sessionManager.configure({ maxSessions: DEFAULT_MAX_SESSIONS });
+    }
+  });
+});
+
+/** A DELETE for `sessionId` on its own connection. */
+function deleteSession(port: number, sessionId: string): Promise<IHttpResponse> {
+  return request(port, ["DELETE /bb-mcp HTTP/1.1", `Host: 127.0.0.1:${port}`, `Mcp-Session-Id: ${sessionId}`]);
+}
+
+// 1.0.2: the 1.0.1 hang report suspected sessions that clients open and never DELETE.
+describe("createNetServer sessions without DELETE", () => {
+  // A registered tool, so each session server holds registrations to release.
+  beforeAll(() => {
+    createTool("net_test_present", { description: "Present.", parameters: z.object({}), execute: async () => "ok" });
+  });
+  afterAll(() => {
+    removeTool("net_test_present");
+  });
+
+  test("a session never deleted expires after the inactivity timeout and releases its server", async () => {
+    const baseline = sessionServerCount();
+    try {
+      const [server] = await start("127.0.0.1", { sessionConfig: { inactivityTimeoutMs: 60 } });
+      const port = portOf(server);
+      const sessionId = await initialize(port);
+      expect(sessionServerCount()).toBe(baseline + 1);
+      await until(() => !sessions.has(sessionId));
+      expect(sessionManager.has(sessionId)).toBe(false);
+      expect(sessionServerCount()).toBe(baseline);
+      expect((await request(port, mcpPost(port, sessionId), toolCall(2, "net_test_any"))).status).toBe(404);
+    } finally {
+      sessionManager.configure({ inactivityTimeoutMs: DEFAULT_INACTIVITY_TIMEOUT_MS });
+    }
+  });
+
+  test("DELETE closes the session and releases its server and tool registrations", async () => {
+    const baseline = sessionServerCount();
+    const [server] = await start("127.0.0.1");
+    const port = portOf(server);
+    const sessionId = await initialize(port);
+    expect(sessionServerCount()).toBe(baseline + 1);
+    expect((await deleteSession(port, sessionId)).status).toBe(200);
+    expect(sessions.has(sessionId)).toBe(false);
+    expect(sessionManager.has(sessionId)).toBe(false);
+    expect(sessionServerCount()).toBe(baseline);
+    expect((await request(port, mcpPost(port, sessionId), toolCall(2, "net_test_any"))).status).toBe(404);
+  });
+
+  test("repeated create and delete leaves no session, timer or server behind", async () => {
+    const baseline = sessionServerCount();
+    const [server] = await start("127.0.0.1");
+    const port = portOf(server);
+    for (let round = 0; round < 40; round++) {
+      const sessionId = await initialize(port);
+      expect((await deleteSession(port, sessionId)).status).toBe(200);
+    }
+    expect(sessions.size).toBe(0);
+    expect(sessionManager.getCount()).toBe(0);
+    expect(sessionServerCount()).toBe(baseline);
+  });
+
+  test("twenty sessions left open still let a new client initialize and call a tool", async () => {
+    createTool("net_test_status", {
+      description: "Answers at once.",
+      parameters: z.object({}),
+      execute: async () => "ok",
+    });
+    try {
+      const [server] = await start("127.0.0.1");
+      const port = portOf(server);
+      for (let n = 0; n < 20; n++) await initialize(port);
+      const sessionId = await initialize(port);
+      const started = performance.now();
+      const reply = await request(port, mcpPost(port, sessionId), toolCall(2, "net_test_status"));
+      expect(reply.status).toBe(200);
+      expect(reply.body).toContain("ok");
+      expect(performance.now() - started).toBeLessThan(1000);
+      expect(sessions.size).toBe(21);
+    } finally {
+      removeTool("net_test_status");
+    }
+  });
+
+  test("past the limit the oldest idle session is closed, so the open count never exceeds it", async () => {
+    try {
+      const [server] = await start("127.0.0.1", { sessionConfig: { maxSessions: 3 } });
+      const port = portOf(server);
+      const opened: string[] = [];
+      for (let n = 0; n < 8; n++) {
+        opened.push(await initialize(port));
+        expect(sessions.size).toBeLessThanOrEqual(3);
+      }
+      expect([...sessions.keys()].sort()).toEqual(opened.slice(-3).sort());
+    } finally {
       sessionManager.configure({ maxSessions: DEFAULT_MAX_SESSIONS });
     }
   });

@@ -1,3 +1,4 @@
+// Modified by AIKUSAN, 2026-11-07: sessionServerCount() for the session-lifecycle tests.
 import { z } from "zod";
 import type { IMCPTool, IMCPPrompt, IMCPResource, StatusType } from "@/types";
 import { getServer } from "@/server/server";
@@ -221,6 +222,11 @@ export function createTool<T extends z.ZodType>(
 /** Each SDK handle must remain registered so a later state change can re-enable it. */
 const serverTools = new Map<McpServer, Map<string, RegisteredTool>>();
 const schemaPublishingServers = new WeakSet<McpServer>();
+
+/** MCP servers that still hold tool registrations: the reference server plus each open session. */
+export function sessionServerCount(): number {
+  return serverTools.size;
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

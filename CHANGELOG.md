@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+No change to the plugin itself; the built file is the same as 1.0.1.
+
+### Investigated
+- A Blockbench freeze reported with 1.0.1 (2026-11-07) was not reproduced. After it, the Blockbench window was blank and its editor process had died, so the plugin's server inside that process stopped answering. Five MCP sessions left open without DELETE, then `create_project`, did not freeze Blockbench again: a new session still answered in 2 ms, and again 35 s later. The cause is not known.
+
+### Added
+- Tests for sessions that clients never close: the inactivity timeout releases them, DELETE releases a session's server and tool registrations, 40 open-and-close rounds leave nothing behind, 20 open sessions do not slow a new client, and the session limit closes the oldest idle session.
+- `tests/repro/session-buildup.ts` (sessions without DELETE, with or without a running Blockbench) and `tests/repro/count-tools.ts` (the tool catalogue grouped by availability).
+
+### Docs
+- `docs/tools.md` says that 204 is the whole catalogue and that a client sees only the tools available at the moment (69 with no project open in the desktop app).
+
 ## 1.0.1 (2026-11-07)
 
 ### Fixed
