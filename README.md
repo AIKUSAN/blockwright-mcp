@@ -1,5 +1,6 @@
 <!-- Modified by AIKUSAN, 2026-11-06: rewritten for Blockwright MCP; the upstream README is kept in docs/upstream-README.md. -->
 <!-- Modified by AIKUSAN, 2026-11-07: sections reordered; the full tool list moved to docs/tools.md. -->
+<!-- Modified by AIKUSAN, 2026-11-07: "See it work" filled with images from the launch session; the tool count is left out until it is re-checked. -->
 # Blockwright MCP for Blockbench
 
 An unofficial MCP server that runs inside Blockbench, so AI assistants such as Claude Code and Claude Desktop can work on your models with you.
@@ -12,7 +13,7 @@ An unofficial MCP server that runs inside Blockbench, so AI assistants such as C
 
 ## What it does
 
-Blockwright MCP is a Blockbench plugin. Once it is loaded, Blockbench serves the Model Context Protocol at `http://localhost:3001/blockwright`, and an MCP client can use 204 tools on the open project, from placing the first cube to exporting the finished model. Screenshots render offscreen, so your camera stays where you left it.
+Blockwright MCP is a Blockbench plugin. Once it is loaded, Blockbench serves the Model Context Protocol at `http://localhost:3001/blockwright`, and an MCP client can use its tools on the open project, from placing the first cube to exporting the finished model. Screenshots render offscreen, so your camera stays where you left it.
 
 It combines [blockbench-mcp-plugin](https://github.com/jasonjgardner/blockbench-mcp-plugin) by Jason J. Gardner (the base) with the tools of [blockbench-mcp](https://github.com/sosadly/blockbench-mcp) by sosadly, plus additions for day-to-day modelling work.
 
@@ -27,8 +28,19 @@ It combines [blockbench-mcp-plugin](https://github.com/jasonjgardner/blockbench-
 
 ## See it work
 
-<!-- Images from the launch session go here: review sheet, find_overlaps, compare_silhouette. -->
-Screenshots and a short video are on their way.
+[Watch the launch video (44 s)](https://github.com/AIKUSAN/blockwright-mcp/releases/download/v1.0.1/blockwright_launch_landscape.mp4)
+
+All images below are real tool output from Blockbench 5.2.2 on a scratch test model.
+
+![render_review_sheet: six views in one PNG, each cell marking the model's own right and left](docs/images/01-review-sheet.png)
+
+![Side guard: arm_left placed at +x gets a warning; with side_check "refuse", nothing is created](docs/images/02-side-guard.png)
+
+![find_overlaps: two z-fighting faces between plate_a and plate_b, with a 0.01 outward offset as the fix](docs/images/03-find-overlaps.png)
+
+![compare_silhouette: reference, model and difference, IoU 0.895](docs/images/04-compare-silhouette.png)
+
+![render_health reports the WebGL budget; the camera does not move during an offscreen review sheet](docs/images/05-webgl-guard.png)
 
 ## Requirements
 
@@ -109,11 +121,11 @@ Other clients: point them at `http://localhost:3001/blockwright` (streamable HTT
 | GeckoLib Integration | 10 | `geckolib_get_format_info`, `geckolib_set_project_settings`, `geckolib_list_easings` |
 | Hytale Integration | 12 | `hytale_get_format_info`, `hytale_validate_model`, `hytale_set_cube_properties` |
 
-The full list of all 204 tools is in [docs/tools.md](docs/tools.md).
+The full list of tools is in [docs/tools.md](docs/tools.md).
 
 ## What's different from upstream
 
-- **One plugin, 204 tools.** The base plugin's tools plus 52 tools ported from sosadly/blockbench-mcp, with no separate bridge process.
+- **One plugin, one tool set.** The base plugin's tools plus 52 tools ported from sosadly/blockbench-mcp, with no separate bridge process.
 - **Review sheets.** `render_review_sheet` renders front, back, sides, top and a three-quarter view into one PNG. Each cell marks where the model's own right and left are, because a front view is mirrored.
 - **Left/right checks.** `which_side` and `check_sides` compare names such as `arm_left` with the geometry. A Minecraft-style model faces −Z, so its own right is +X in Blockbench. Note that the Bedrock export mirrors X: the model's right is −X in a `.geo.json`.
 - **WebGL recovery.** Screenshots refuse frames from a lost WebGL context instead of returning blank images. `render_health` and `recover_renderer` rebuild what can be rebuilt and say when Blockbench must be restarted.
