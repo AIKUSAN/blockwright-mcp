@@ -83,6 +83,29 @@ sub("""		try { Timeline.setTime(0); } catch (e) {}
 		} catch (e) {}
 		if (switched && Modes.options[previous]) { try { Modes.options[previous].select(); } catch (e) {} }""", 1)
 sub("'blockbench_mcp_panel'", "'blockwright_copilot'", 2)
+# 0.4.0 guide text sends the model to find_references (web search), which is not ported, and
+# offers load_reference options (result, url) that are gone. Point it at the user instead.
+sub("\t'  find_references (known subject? ALWAYS) -> load 2-4 -> get_reference / zoom_reference',",
+    "\t'  ask the user for reference images (known subject? ALWAYS) -> load_reference 2-4 -> get_reference / zoom_reference',", 1)
+sub("\t'   character, creature, franchise item, vehicle, building, product), find_references',\n\t'   first — even if the user gave one image you still need the back, the sides and',",
+    "\t'   character, creature, franchise item, vehicle, building, product), ask the user for',\n\t'   reference images first — even if they gave one image you still need the back, the sides and',", 1)
+sub("""\t'- find_references {query, kind} — search the web (safe search on) and get ONE',
+\t'  numbered contact sheet. ALWAYS do this for a known subject (named character,',
+\t'  creature, franchise item, vehicle, building, real product), even when the user',
+\t'  gave an image: you need the back, the sides and the small parts. Prefer official',
+\t'  art, turnaround / reference sheets and clean full-body views; skip fan restyles,',
+\t'  cosplay photos and crops. Load 2-4 with load:[N,M] or load_reference {result:N}.',""",
+"""\t'- Reference images: ask the user for them. ALWAYS do this for a known subject (named',
+\t'  character, creature, franchise item, vehicle, building, real product), even when the',
+\t'  user gave an image: you need the back, the sides and the small parts. Prefer official',
+\t'  art, turnaround / reference sheets and clean full-body views; skip fan restyles,',
+\t'  cosplay photos and crops. Load 2-4 with load_reference {path|data_url}.',""", 1)
+sub("\t'- load_reference {result|url|path|data_url} — add a reference yourself.',", "\t'- load_reference {path|data_url} — add a reference yourself.',", 1)
+sub("\t'0. REFERENCES. Named character? find_references {kind:\"character\"} and load a',", "\t'0. REFERENCES. Named character? Ask the user for images and load_reference a',", 1)
+sub("call load_reference / find_references first.", "call load_reference first.", 1)
+sub("(load_reference / find_references) or pass colors", "(load_reference) or pass colors", 1)
+sub("call load_reference, or find_references to search the web.", "or call load_reference.", 1)
+sub("Used by find_references.", "Not used: find_references, which used it, is not ported.", 1)
 code_only = "\n".join(l for l in text.split("\n") if not l.lstrip().startswith(("//", "*", "/*")))
 if "Screencam" in code_only or re.search(r"\brequire\(", code_only):
     raise SystemExit("unported Screencam or require left in core")
@@ -94,7 +117,9 @@ core = header("Blockbench-side command core", " * - the HTTP bridge, settings, m
     " * - withAnimationMode restores the selected animation and timeline time instead of resetting to 0;\n"
     " * - describeView keeps world up like three.js lookAt, fixing the top/bottom left-right labels;\n"
     " * - inspect_model close-ups render through hooks.shoot(), like every other capture;\n"
-    " * - execute_script asks hooks.scriptsAllowed(), the same switch as the plugin's risky_eval.") + \
+    " * - execute_script asks hooks.scriptsAllowed(), the same switch as the plugin's risky_eval;\n"
+    " * - the guides and error messages no longer send the model to find_references (not ported)\n"
+    " *   or to the load_reference options result and url.") + \
 """/* eslint-disable */
 // @ts-nocheck
 export function createSosadlyCore(hooks) {
@@ -155,7 +180,7 @@ cut('  {\n    name: "load_reference",', '\n  },\n', '''  forward(
 old_hint = "call find_references BEFORE modeling (even if the user gave one image — you need the other angles), load the best 2-4, then make_palette from them."
 if cat.count(old_hint) != 1:
     raise SystemExit("get_status reference hint changed upstream")
-cat = cat.replace(old_hint, "ask the user for reference images (find_references is not part of Blockwright: it searches the web), load the best 2-4 with load_reference {path} or {data_url}, then make_palette from them.")
+cat = cat.replace(old_hint, "ask the user for reference images (Blockwright has no web image search), load the best 2-4 with load_reference {path} or {data_url}, then make_palette from them.")
 for gone in ("references.js", "searchReferences", "lastSearchResults", "downloadImage", "downloadResult", "cachedSearch", "fetchThumbnails", "describeSubject", "find_references"):
     # Mentions inside tool descriptions are prose for the model; code references must be gone.
     for line in cat.split("\\n"):

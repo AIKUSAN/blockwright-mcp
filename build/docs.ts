@@ -1,3 +1,4 @@
+// Modified by AIKUSAN, 2026-11-10: getTypeLabel accepts a list of types (the sosadly 0.4.0 tools have number-or-string parameters).
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { z } from "zod";
 import { toolManifest, promptDocs, resourceDocs } from "./docs-manifest";
@@ -130,6 +131,8 @@ function getTypeLabel(schema: Record<string, unknown>): string {
     const valType = getTypeLabel(schema.additionalProperties as Record<string, unknown>);
     return `Record<string, ${valType}>`;
   }
+  // A union such as z.union([z.number(), z.string()]) gives a list of types.
+  if (Array.isArray(schema.type)) return (schema.type as string[]).join(" | ");
   if (schema.type) return schema.type as string;
   if (schema.const !== undefined) return JSON.stringify(schema.const);
   return "unknown";

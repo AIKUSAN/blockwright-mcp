@@ -255,7 +255,7 @@ const catalogue: ToolDef[] = [
   // ===== status & discovery ================================================
   forward(
     "get_status",
-    "Get the current Blockbench state: open project, format, counts of cubes/groups/textures/animations, and edit mode. Call this first to understand the workspace. If you are about to BUILD or TEXTURE a model, call get_guide first. REFERENCES FIRST: if the subject is a known character, creature, franchise item, vehicle, building or real product, ask the user for reference images (find_references is not part of Blockwright: it searches the web), load the best 2-4 with load_reference {path} or {data_url}, then make_palette from them. If the user dropped a reference into the MCP Copilot panel, call get_reference to see it. Build, then compare_reference every pass until match_percent is high — do not judge the match by eye.",
+    "Get the current Blockbench state: open project, format, counts of cubes/groups/textures/animations, and edit mode. Call this first to understand the workspace. If you are about to BUILD or TEXTURE a model, call get_guide first. REFERENCES FIRST: if the subject is a known character, creature, franchise item, vehicle, building or real product, ask the user for reference images (Blockwright has no web image search), load the best 2-4 with load_reference {path} or {data_url}, then make_palette from them. If the user dropped a reference into the MCP Copilot panel, call get_reference to see it. Build, then compare_reference every pass until match_percent is high — do not judge the match by eye.",
     obj({})
   ),
   forward(

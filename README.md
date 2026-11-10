@@ -186,6 +186,8 @@ node --test tests-node/
 
 - Base: [blockbench-mcp-plugin](https://github.com/jasonjgardner/blockbench-mcp-plugin) by Jason J. Gardner and contributors, GPL-3.0-only.
 - Ported tools and the Copilot panel: [blockbench-mcp](https://github.com/sosadly/blockbench-mcp) by sosadly, MIT. The MIT notice is kept in the ported files and in `LICENSES/`.
+- Skills and the agent: [blockbench-mcp-project](https://github.com/jasonjgardner/blockbench-mcp-project) by Jason J. Gardner, Apache-2.0, and the `blockbench-mcp-modeling` skill by sosadly, MIT. Both are bundled unchanged, each with its licence.
+- GeckoLib validation: portions adapted from [minecraft-blockbench-mcp](https://github.com/adhi-jp/minecraft-blockbench-mcp) by adhi-jp, MIT. The notice is kept in the file.
 - Changes and additions: Copyright (c) 2026 AIKUSAN (Minecraft IGN: AIKUSAN).
 
 The upstream README is kept in [docs/upstream-README.md](docs/upstream-README.md).

@@ -76,9 +76,12 @@ describe("sosadly tools added in 1.1.0", () => {
     expect(Object.keys(properties).sort()).toEqual(["data_url", "name", "opacity", "overlay", "path"]);
   });
 
-  test("get_status no longer tells the model to call find_references", () => {
-    const text = catalogue.find(t => t.name === "get_status")!.description;
-    expect(text).toContain("find_references is not part of Blockwright");
-    expect(text).not.toContain("call find_references BEFORE");
+  test("no tool description sends the model to find_references", () => {
+    for (const tool of catalogue) expect(tool.description, tool.name).not.toContain("find_references");
+    expect(catalogue.find(t => t.name === "get_status")!.description).toContain("Blockwright has no web image search");
+  });
+
+  test("no argument description offers a load_reference option that was removed", () => {
+    for (const tool of catalogue) expect(JSON.stringify(tool.inputSchema), tool.name).not.toMatch(/find_references|load_reference \{result/);
   });
 });

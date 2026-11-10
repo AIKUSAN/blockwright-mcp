@@ -247,3 +247,32 @@ test("screenshot captures through the plugin's offscreen hook and stamps the way
   assert.deepEqual(plain(shots), [{ width: 128 }]);
   assert.equal(typeof result.view, "string");
 });
+
+// --- the guide must not send a model to a tool that is not there ------------------------------
+const GUIDE_TOPICS = ["modeling", "detailing", "orientation", "rigging", "texturing", "vfx", "animation", "review", "reference", "character", "mechanism", "inspection"];
+
+test("no get_guide topic mentions find_references, which is not ported", () => {
+  const { commands } = load();
+  for (const topic of GUIDE_TOPICS) {
+    const text = JSON.stringify(commands.get_guide({ topic }));
+    assert.ok(text.length > 200, `${topic} guide should have text`);
+    assert.equal(text.includes("find_references"), false, `${topic} guide mentions find_references`);
+  }
+  const overview = JSON.stringify(commands.get_guide({}));
+  assert.equal(overview.includes("find_references"), false);
+});
+
+test("the reference guide does not offer load_reference options that were removed (result, url)", () => {
+  const { commands } = load();
+  const text = JSON.stringify(commands.get_guide({ topic: "reference" }));
+  assert.equal(/load_reference \{[^}]*(\bresult\b|(?<![a-z_])url\b)/.test(text), false);
+  assert.equal(text.includes("load:[N,M]"), false);
+});
+
+test("error messages that tell the model what to do next do not name find_references", async () => {
+  const { commands } = load();
+  await assert.rejects(async () => commands.zoom_reference({ rect: [0, 0, 0.5, 0.5] }), (e) => !/find_references/.test(e.message));
+  await assert.rejects(async () => commands.make_palette({ source: "reference" }), (e) => !/find_references/.test(e.message));
+  const none = plain(await commands.compare_reference({}).catch((e) => ({ note: e.message })));
+  assert.equal(JSON.stringify(none).includes("find_references"), false);
+});

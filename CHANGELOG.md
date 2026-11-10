@@ -9,12 +9,18 @@ Brings Blockwright up to date with both upstream projects. The plugin code came 
 - 10 sosadly tools that 1.0.2 left out because a base tool does the same job under another name. Their names do not clash, so they are registered under sosadly's names. sosadly's skill calls seven of them (`add_cube`, `add_cubes`, `add_keyframes`, `add_mesh`, `delete_element`, `execute_script`, `list_outliner`) and no skill calls the other three: `add_cube`, `add_cubes`, `add_keyframe`, `add_keyframes`, `add_mesh`, `delete_element`, `execute_script`, `list_outliner`, `new_project`, `screenshot`. `execute_script` follows the `risky_eval` setting, so it is on by default here, where sosadly's own switch defaulted to off.
 - The Agent Skills of both upstream projects in `skills/` (15 from blockbench-mcp-project under Apache-2.0, and `blockbench-mcp-modeling` from sosadly under MIT) and the `blockbench-physical-accuracy-reviewer` agent in `agents/`, all unchanged, each with `UPSTREAM.md` and `LICENSE.upstream`.
 - `bin/install-skills.sh` copies the skills into `~/.claude/skills`. It skips and names any that exist. `--update` moves the old copy to `_old/<name>_<date>/`. Nothing is deleted.
-- `docs/upstream-sync-2026-11-10.md`, and tests: 101 sosadly behaviour tests (`tests-node/sosadly/`, 83 adapted from sosadly's own), wiring tests for every added tool, and tests for the install script.
+- `docs/upstream-sync-2026-11-10.md`, and tests: 104 sosadly behaviour tests (`tests-node/sosadly/`, 83 adapted from sosadly's own), wiring tests for every added tool, and tests for the install script.
 
 ### Changed
 - The sosadly code (`lib/sosadly/`) is regenerated from sosadly b024728 (0.4.0). `edit_element` takes `offset` and refuses `from`, `to` and `inflate` where they would do nothing, and `get_element` reports a mesh's origin, rotation and bounds. sosadly's `add_mesh` fix (no stray default cube) comes with the re-registered `add_mesh`.
 - 228 tools in the catalogue (204 in 1.0.2), and 93 are listed with no project open.
 - `bun test` skips `skills/` (`bunfig.toml`).
+
+### Credits
+- Jason J. Gardner and contributors: the base plugin (GPL-3.0-only) and the 15 bundled skills and the agent (blockbench-mcp-project, Apache-2.0).
+- sosadly: the ported tools, their tests and the `blockbench-mcp-modeling` skill (MIT).
+- adhi-jp: portions of the GeckoLib validation (MIT).
+- The whole work stays GPL-3.0-only. `NOTICE` and `THIRD_PARTY_NOTICES.md` carry the details.
 
 ### Not ported
 - `find_references`, sosadly's web image search, and the `url` and `result` options of `load_reference`: they need an online service. `load_reference` still takes a `path` or a `data_url`.

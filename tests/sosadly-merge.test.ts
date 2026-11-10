@@ -4,11 +4,13 @@ import { tools as catalogue } from "@/lib/sosadly/catalogue";
 import { SOSADLY_MERGED_INTO, sosadlyToolDocs } from "@/server/tools/sosadly";
 import docs from "@/docs/api.json";
 
-const baseNames = new Set<string>();
-JSON.stringify(docs, (key, value) => {
-  if (value && typeof value === "object" && typeof value.name === "string" && "description" in value) baseNames.add(value.name);
-  return value;
-});
+// docs/api.json lists every registered tool with its category; the base tools are the ones outside the sosadly category.
+const SOSADLY_CATEGORY = "Ported from sosadly/blockbench-mcp (MIT)";
+const baseNames = new Set<string>(
+  (docs as { tools: Array<{ name: string; category: string }> }).tools
+    .filter(tool => tool.category !== SOSADLY_CATEGORY)
+    .map(tool => tool.name),
+);
 
 describe("sosadly merge", () => {
   test("every sosadly tool is either registered or merged into a base tool", () => {
