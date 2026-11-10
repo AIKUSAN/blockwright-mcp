@@ -24,12 +24,21 @@ Upstream works
    https://github.com/sosadly/blockbench-mcp
    Copyright (c) 2026 sosadly. Licence: MIT, full text in
    LICENSES/MIT-sosadly-blockbench-mcp.txt. Portions adapted from commit
-   028cdd7 are in lib/sosadly/core.js, lib/sosadly/catalogue.ts and
-   lib/orientation.ts; each of those files carries the MIT notice in its
-   header. build/port-sosadly.py regenerates the first two from a checkout of
-   that commit.
+   b024728 (v0.4.0) are in lib/sosadly/core.js, lib/sosadly/catalogue.ts and
+   lib/orientation.ts, and its behaviour tests in tests-node/sosadly/; each of
+   those files carries the MIT notice in its header. build/port-sosadly.py
+   regenerates the first two from a checkout of that commit. Its skill
+   blockbench-mcp-modeling is bundled unchanged in skills/.
 
-3. Already in the base: portions of lib/geckolib-validate.ts are adapted from
+3. blockbench-mcp-project by Jason J. Gardner
+   https://github.com/jasonjgardner/blockbench-mcp-project
+   Licence: Apache-2.0 (copy in LICENSE.upstream beside the files). Its 15
+   skills are bundled unchanged in skills/ and its agent
+   blockbench-physical-accuracy-reviewer in agents/, from commit
+   e9c29a93e54bdd9aaa8a308196dfd4147e47d88c. Each folder has UPSTREAM.md
+   naming the source and commit.
+
+4. Already in the base: portions of lib/geckolib-validate.ts are adapted from
    adhi-jp/minecraft-blockbench-mcp, Copyright (c) 2026 adhi-jp, MIT; the
    notice is kept in that file's header.
 

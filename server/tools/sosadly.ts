@@ -3,9 +3,18 @@
 /**
  * Registers the tools ported from sosadly/blockbench-mcp (MIT, Copyright (c)
  * 2026 sosadly; see lib/sosadly/catalogue.ts and lib/sosadly/core.js for the
- * notice). Tools that duplicate a base tool are not registered; the base tool
- * is kept (SOSADLY_MERGED_INTO). install_plugin and uninstall_plugin stay
- * disabled until the setting blockwright_plugin_management_enabled is turned on.
+ * notice). A sosadly tool whose name is also a base tool's name is not
+ * registered; the base tool is kept (SOSADLY_MERGED_INTO). sosadly tools with a
+ * different name from their base twin (add_cube next to place_cube, say) are
+ * registered, so that everything sosadly ships whose name does not clash is there:
+ * sosadly's skill (skills/blockbench-mcp-modeling) calls seven of the ten (add_cube,
+ * add_cubes, add_keyframes, add_mesh, delete_element, execute_script, list_outliner)
+ * and no skill calls add_keyframe, new_project or screenshot. install_plugin and uninstall_plugin stay disabled until the
+ * setting blockwright_plugin_management_enabled is turned on; execute_script
+ * follows the risky_eval setting.
+ *
+ * 2026-11-10: catalogue and core updated to sosadly b024728 (0.4.0).
+ * find_references (web image search) is not ported.
  *
  * Copyright (c) 2026 AIKUSAN. Part of an unofficial fork of
  * jasonjgardner/blockbench-mcp-plugin, distributed under GPL-3.0-only.
@@ -13,7 +22,7 @@
 import { z } from "zod";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { createTool, refreshToolAvailability, type IToolSpec } from "@/lib/factories";
-import { DEFAULT_MCP_PORT, STATUS_EXPERIMENTAL } from "@/lib/constants";
+import { DEFAULT_MCP_PORT, SETTING_RISKY_EVAL_ENABLED, STATUS_EXPERIMENTAL } from "@/lib/constants";
 import {
   canCreateOffscreenView, createOffscreenView, getOffscreenViewCount, listViews, rememberOffscreenCamera,
   renderViewToDataUrl, resizeOffscreenView, resolveView,
@@ -35,20 +44,12 @@ export const SOSADLY_MERGED_INTO: Readonly<Record<string, string>> = {
   list_textures: "list_textures",
   set_camera_angle: "set_camera_angle",
   set_cube_uv: "set_cube_uv",
-  new_project: "create_project",
-  delete_element: "remove_element",
-  list_outliner: "list_outline",
-  screenshot: "capture_screenshot",
-  execute_script: "risky_eval",
-  add_cube: "place_cube",
-  add_cubes: "place_cube",
-  add_keyframe: "manage_keyframes",
-  add_keyframes: "batch_keyframe_operations",
-  add_mesh: "place_mesh / create_sphere / create_cylinder / create_polyhedron",
 };
 
 export const SETTING_PLUGIN_MANAGEMENT = "blockwright_plugin_management_enabled";
 const PLUGIN_MANAGEMENT_TOOLS = new Set(["install_plugin", "uninstall_plugin"]);
+/** Same switch as risky_eval (Settings > General): execute_script runs the same unsandboxed JavaScript. */
+const EVAL_TOOLS = new Set(["execute_script"]);
 const CAPTURE_VIEW_ID = "sosadly_capture";
 const DEFAULT_CAPTURE_SIZE = 768;
 
@@ -94,6 +95,7 @@ function getCore(): Core {
       shoot,
       // @ts-ignore - requireNativeModule is a Blockbench global
       fs: () => requireNativeModule("fs"),
+      scriptsAllowed: () => evalEnabled(),
       port: () => {
         const value = Number(Settings.get("blockwright_port"));
         return Number.isInteger(value) && value > 0 ? value : DEFAULT_MCP_PORT;
@@ -126,6 +128,8 @@ export function teardownSosadly(): void {
 }
 
 const pluginManagementEnabled = () => Settings.get(SETTING_PLUGIN_MANAGEMENT) === true;
+/** Mirrors risky_eval: on unless the user turned it off; hosts without settings keep it. */
+const evalEnabled = (): boolean => typeof Settings === "undefined" || Settings.get(SETTING_RISKY_EVAL_ENABLED) !== false;
 
 export const sosadlyToolDocs: IToolSpec[] = sosadlyCatalogue
   .filter(tool => !(tool.name in SOSADLY_MERGED_INTO))
@@ -139,6 +143,7 @@ export const sosadlyToolDocs: IToolSpec[] = sosadlyCatalogue
       parameters: z.preprocess(value => coerceArgs(tool.inputSchema, (value ?? {}) as Record<string, unknown>), shape),
       status: STATUS_EXPERIMENTAL,
       ...(PLUGIN_MANAGEMENT_TOOLS.has(tool.name) ? { condition: pluginManagementEnabled } : {}),
+      ...(EVAL_TOOLS.has(tool.name) ? { condition: evalEnabled } : {}),
     } satisfies IToolSpec;
   });
 

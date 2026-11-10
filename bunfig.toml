@@ -1,0 +1,6 @@
+# Copyright (c) 2026 AIKUSAN. Part of Blockwright MCP, distributed under GPL-3.0-only.
+#
+# `bun test` runs Blockwright's own tests only. The bundled upstream skills (skills/)
+# carry test files of their own that need Python and Pillow; run those from the skill's folder.
+[test]
+pathIgnorePatterns = ["skills/**", "node_modules/**"]

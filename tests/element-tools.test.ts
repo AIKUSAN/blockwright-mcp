@@ -1,3 +1,4 @@
+// Modified by AIKUSAN, 2026-11-10: a type assertion on one list_outline result so `tsc --noEmit` reports no error.
 import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 import { isRecord } from "@/tests/helpers/assertions";
 import { useGlobals } from "@/tests/helpers/globals";
@@ -421,7 +422,8 @@ describe("remove_element", () => {
       expect(limited.truncated_at_max_depth).toEqual(["rig"]);
       const depthTwo = await callJson("list_outline", { max_depth: 2 });
       expect(depthTwo.truncated_at_max_depth).toBeUndefined();
-      expect(depthTwo.roots[0].children[0].children[0].children).toEqual([]);
+      const roots = depthTwo.roots as Array<{ children: Array<{ children: Array<{ children: unknown }> }> }>;
+      expect(roots[0].children[0].children[0].children).toEqual([]);
     });
   });
 });

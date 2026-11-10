@@ -1,6 +1,7 @@
 <!-- Modified by AIKUSAN, 2026-11-06: rewritten for Blockwright MCP; the upstream README is kept in docs/upstream-README.md. -->
 <!-- Modified by AIKUSAN, 2026-11-07: sections reordered; the full tool list moved to docs/tools.md. -->
 <!-- Modified by AIKUSAN, 2026-11-07: "See it work" filled with images from the launch session; the tool count is left out until it is re-checked; the launch demo is shown as a GIF. -->
+<!-- Modified by AIKUSAN, 2026-11-10: "Skills and agents" section added, and the sosadly tools updated to 0.4.0 (76 registered). -->
 # Blockwright MCP for Blockbench
 
 An unofficial MCP server that runs inside Blockbench, so AI assistants such as Claude Code and Claude Desktop can work on your models with you.
@@ -99,7 +100,7 @@ Other clients: point them at `http://localhost:3001/blockwright` (streamable HTT
 | Cubes | 5 | `place_cube`, `modify_cube`, `knife_cut_cube` |
 | Camera & Screenshots | 7 | `capture_screenshot`, `capture_app_screenshot`, `set_camera_angle` |
 | Review & Renderer Health | 3 | `render_review_sheet`, `render_health`, `recover_renderer` |
-| Ported from sosadly/blockbench-mcp (MIT) | 52 | `get_status`, `get_guide`, `get_orientation` |
+| Ported from sosadly/blockbench-mcp (MIT) | 76 | `get_status`, `get_guide`, `inspect_model` |
 | Quality checks | 2 | `find_overlaps`, `compare_silhouette` |
 | Capabilities | 1 | `get_capabilities` |
 | Animation | 9 | `create_animation`, `manage_keyframes`, `animation_graph_editor` |
@@ -123,9 +124,30 @@ Other clients: point them at `http://localhost:3001/blockwright` (streamable HTT
 
 The full list of tools is in [docs/tools.md](docs/tools.md).
 
+## Skills and agents
+
+Blockwright bundles the Agent Skills of both upstream projects, so an assistant knows how to model, texture, rig and animate with these tools, not only which tools exist. The files are unchanged. Each folder says where it came from (`UPSTREAM.md`) and carries its licence (`LICENSE.upstream`).
+
+| What | Where | Source |
+|---|---|---|
+| 15 skills: `blockbench-use` (load it first), `-modeling`, `-texturing`, `-pbr-materials`, `-animation`, `-particles`, `-hytale`, `-vanilla-textures`, `-mcp-overview`, `-new-model`, `-development`, `-albedo-to-pbr`, `-gpt-image-textures`, `-flipbook-textures`, `-substance` | `skills/` | [blockbench-mcp-project](https://github.com/jasonjgardner/blockbench-mcp-project), Apache-2.0 |
+| `blockbench-mcp-modeling`: build from references, with cube budgets and review passes | `skills/` | [sosadly/blockbench-mcp](https://github.com/sosadly/blockbench-mcp), MIT |
+| `blockbench-physical-accuracy-reviewer`, a read-only agent that checks that a model of a real object could exist and work | `agents/` | blockbench-mcp-project, Apache-2.0 |
+
+To install the skills for Claude Code, from a checkout of this repository:
+
+```bash
+bin/install-skills.sh            # copies every skill into ~/.claude/skills; skips and names any that already exist
+bin/install-skills.sh --update   # replaces the ones that exist; the old copy moves to ~/.claude/skills/_old/<name>_<date>/
+```
+
+Nothing is deleted. For another client that reads Agent Skills, copy the folders from `skills/` into that client's skills folder. To use the agent in Claude Code, copy it into place: `mkdir -p ~/.claude/agents && cp agents/*.md ~/.claude/agents/`. The file is unchanged upstream text: it sets `model: opus` and allows web search and fetch, so edit your copy if you want otherwise.
+
+Some skills need more than Blockbench. `blockbench-gpt-image-textures` needs a fal.ai key for a paid online service, `blockbench-new-model` needs Blender and FFmpeg, and `blockbench-substance` needs a licensed Substance 3D install. The skills only describe those steps, and Blockwright adds no tool for them.
+
 ## What's different from upstream
 
-- **One plugin, one tool set.** The base plugin's tools plus 52 tools ported from sosadly/blockbench-mcp, with no separate bridge process.
+- **One plugin, one tool set.** The base plugin's tools plus 76 tools from sosadly/blockbench-mcp 0.4.0, with no separate bridge process. `find_references`, sosadly's web image search, is left out: Blockwright adds no tool that needs an online service.
 - **Review sheets.** `render_review_sheet` renders front, back, sides, top and a three-quarter view into one PNG. Each cell marks where the model's own right and left are, because a front view is mirrored.
 - **Left/right checks.** `which_side` and `check_sides` compare names such as `arm_left` with the geometry. A Minecraft-style model faces −Z, so its own right is +X in Blockbench. Note that the Bedrock export mirrors X: the model's right is −X in a `.geo.json`.
 - **WebGL recovery.** Screenshots refuse frames from a lost WebGL context instead of returning blank images. `render_health` and `recover_renderer` rebuild what can be rebuilt and say when Blockbench must be restarted.

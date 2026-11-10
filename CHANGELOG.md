@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.1.0 (2026-11-10)
+
+Brings Blockwright up to date with both upstream projects. The plugin code came from them at the fork. Their skills and agent did not, and neither did the tools added since. See [docs/upstream-sync-2026-11-10.md](docs/upstream-sync-2026-11-10.md) for the full comparison.
+
+### Added
+- 14 tools new in sosadly/blockbench-mcp 0.4.0: `add_cylinder`, `add_flare`, `add_gear`, `add_hair`, `add_meshes`, `add_pipe`, `animate_mechanism`, `create_textures`, `fix_z_fighting`, `get_palette`, `inspect_model`, `make_palette`, `paint_face`, `zoom_reference`.
+- 10 sosadly tools that 1.0.2 left out because a base tool does the same job under another name. Their names do not clash, so they are registered under sosadly's names. sosadly's skill calls seven of them (`add_cube`, `add_cubes`, `add_keyframes`, `add_mesh`, `delete_element`, `execute_script`, `list_outliner`) and no skill calls the other three: `add_cube`, `add_cubes`, `add_keyframe`, `add_keyframes`, `add_mesh`, `delete_element`, `execute_script`, `list_outliner`, `new_project`, `screenshot`. `execute_script` follows the `risky_eval` setting, so it is on by default here, where sosadly's own switch defaulted to off.
+- The Agent Skills of both upstream projects in `skills/` (15 from blockbench-mcp-project under Apache-2.0, and `blockbench-mcp-modeling` from sosadly under MIT) and the `blockbench-physical-accuracy-reviewer` agent in `agents/`, all unchanged, each with `UPSTREAM.md` and `LICENSE.upstream`.
+- `bin/install-skills.sh` copies the skills into `~/.claude/skills`. It skips and names any that exist. `--update` moves the old copy to `_old/<name>_<date>/`. Nothing is deleted.
+- `docs/upstream-sync-2026-11-10.md`, and tests: 101 sosadly behaviour tests (`tests-node/sosadly/`, 83 adapted from sosadly's own), wiring tests for every added tool, and tests for the install script.
+
+### Changed
+- The sosadly code (`lib/sosadly/`) is regenerated from sosadly b024728 (0.4.0). `edit_element` takes `offset` and refuses `from`, `to` and `inflate` where they would do nothing, and `get_element` reports a mesh's origin, rotation and bounds. sosadly's `add_mesh` fix (no stray default cube) comes with the re-registered `add_mesh`.
+- 228 tools in the catalogue (204 in 1.0.2), and 93 are listed with no project open.
+- `bun test` skips `skills/` (`bunfig.toml`).
+
+### Not ported
+- `find_references`, sosadly's web image search, and the `url` and `result` options of `load_reference`: they need an online service. `load_reference` still takes a `path` or a `data_url`.
+- The 19 names in the first comparison turned out to be Blockbench event names from a skill's reference page, not tools.
+
 ## 1.0.2 (2026-11-07)
 
 ### Fixed

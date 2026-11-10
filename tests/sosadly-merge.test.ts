@@ -16,8 +16,10 @@ describe("sosadly merge", () => {
     for (const tool of catalogue) {
       expect(registered.has(tool.name) !== (tool.name in SOSADLY_MERGED_INTO)).toBe(true);
     }
-    expect(catalogue.length).toBe(71);
-    expect(registered.size).toBe(71 - Object.keys(SOSADLY_MERGED_INTO).length);
+    // sosadly 0.4.0 (b024728) has 86 tools; find_references (web image search) is not ported.
+    expect(catalogue.length).toBe(85);
+    expect(registered.size).toBe(85 - Object.keys(SOSADLY_MERGED_INTO).length);
+    expect(registered.size).toBe(76);
   });
 
   test("no registered sosadly tool reuses a base tool name", () => {
@@ -28,6 +30,17 @@ describe("sosadly merge", () => {
     for (const target of Object.values(SOSADLY_MERGED_INTO)) {
       for (const name of target.split(" / ")) expect(baseNames.has(name)).toBe(true);
     }
+  });
+
+  test("only same-named clashes are merged; differently named twins are registered", () => {
+    expect(Object.keys(SOSADLY_MERGED_INTO).sort()).toEqual(Object.values(SOSADLY_MERGED_INTO).sort());
+    for (const name of ["add_cube", "add_cubes", "add_mesh", "delete_element", "list_outliner", "new_project", "screenshot", "execute_script", "add_keyframe", "add_keyframes"]) {
+      expect(sosadlyToolDocs.some(t => t.name === name)).toBe(true);
+    }
+  });
+
+  test("execute_script follows the risky_eval switch and install tools are gated", () => {
+    expect(sosadlyToolDocs.find(t => t.name === "execute_script")?.condition).toBeFunction();
   });
 
   test("plugin install tools are registered but gated", () => {
